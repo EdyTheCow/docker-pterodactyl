@@ -1,0 +1,53 @@
+version: '3.1'
+
+services:
+
+  mariadb:
+    image: mariadb:10.2
+    env_file: .env
+    restart: always
+    volumes:
+      - ./db:/var/lib/mysql
+
+  cache:
+    image: redis:alpine
+    restart: always
+
+  panel:
+    image: ccarney16/pterodactyl-panel:latest
+    env_file: .env
+    restart: always
+    depends_on:
+      - cache
+      - mariadb
+    volumes:
+      - ./data:/data
+    labels:
+      - "traefik.backend=panel.${DOMAIN}"
+      - "traefik.docker.network=pterodactyl"
+      - "traefik.frontend.rule=Host:panel.${DOMAIN}"
+      - "traefik.enable=true"
+      - "traefik.port=80"
+
+  daemon:
+    image: ccarney16/pterodactyl-daemon:latest
+    privileged: true
+    restart: always
+    depends_on:
+      - panel
+    ports:
+      - 2022:2022
+    volumes:
+      - /srv/daemon/config:/srv/daemon/config
+      - /srv/daemon/packs:/srv/daemon/packs
+      - /srv/daemon-data:/srv/daemon-data
+      - /tmp/pterodactyl:/tmp/pterodactyl
+      - /etc/localtime:/etc/localtime
+      - ${DOCKER_ROOT:-/var/lib/docker}:${DOCKER_ROOT:-/var/lib/docker}
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:${DOCKER_SOCKET:-/var/run/docker.sock}
+    labels:
+      - "traefik.backend=node.${DOMAIN}"
+      - "traefik.docker.network=pterodactyl"
+      - "traefik.frontend.rule=Host:node.${DOMAIN}"                                                                                                                      
+      - "traefik.enable=true"
+      - "traefik.port=443"
