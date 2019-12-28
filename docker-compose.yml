@@ -1,25 +1,51 @@
-version: '3.1'
+version: '2.1'
 
 services:
 
-  mariadb:
-    image: mariadb:10.2
+  traefik:
+    image: traefik:1.7
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - pterodactyl
+      - local
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${CONFIG_DIR}/traefik/traefik.toml:/traefik.toml
+      - ${CONFIG_DIR}/traefik/acme.json:/acme.json
+      - ${CONFIG_DIR}/traefik/.htpasswd:/.htpasswd
+      - ${CONFIG_DIR}/traefik/logs:/logs
+    environment:
+      - CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+
+  mysql:
+    networks:
+      - local
     env_file: .env
+    image: mariadb:10.2
     restart: always
     volumes:
       - ./db:/var/lib/mysql
 
   cache:
+    networks:
+      - local
     image: redis:alpine
     restart: always
 
   panel:
-    image: ccarney16/pterodactyl-panel:latest
-    env_file: .env
-    restart: always
+    networks:
+      - local
+      - pterodactyl
     depends_on:
       - cache
-      - mariadb
+      - mysql
+    env_file: .env
+    image: ccarney16/pterodactyl-panel:latest
+    restart: always
     volumes:
       - ./data:/data
     labels:
@@ -30,13 +56,16 @@ services:
       - "traefik.port=80"
 
   daemon:
-    image: ccarney16/pterodactyl-daemon:latest
-    privileged: true
-    restart: always
+    networks:
+      - local
+      - pterodactyl
     depends_on:
       - panel
+    image: ccarney16/pterodactyl-daemon:latest
     ports:
       - 2022:2022
+    privileged: true
+    restart: always
     volumes:
       - /srv/daemon/config:/srv/daemon/config
       - /srv/daemon/packs:/srv/daemon/packs
@@ -48,6 +77,10 @@ services:
     labels:
       - "traefik.backend=node.${DOMAIN}"
       - "traefik.docker.network=pterodactyl"
-      - "traefik.frontend.rule=Host:node.${DOMAIN}"                                                                                                                      
+      - "traefik.frontend.rule=Host:node.${DOMAIN}"
       - "traefik.enable=true"
       - "traefik.port=443"
+      - "traefik.http.middlewares.testheader.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=panel.beefbytes.com"
+      - "traefik.http.middlewares.testheader.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.testheader.headers.addvaryheader=true"
