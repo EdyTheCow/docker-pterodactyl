@@ -81,6 +81,6 @@ services:
       - "traefik.enable=true"
       - "traefik.port=443"
       - "traefik.http.middlewares.testheader.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
-      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=panel.beefbytes.com"
+      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=panel.${DOMAIN}
       - "traefik.http.middlewares.testheader.headers.accesscontrolmaxage=100"
       - "traefik.http.middlewares.testheader.headers.addvaryheader=true"
