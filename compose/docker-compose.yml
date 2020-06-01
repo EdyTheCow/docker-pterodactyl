@@ -1,53 +1,38 @@
-version: '2.1'
+version: '3.7'
 
 services:
 
   traefik:
-    image: traefik:1.7
+    image: traefik:v2.2
     restart: always
     ports:
       - "80:80"
       - "443:443"
-    networks:
-      - pterodactyl
-      - local
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${CONFIG_DIR}/traefik/traefik.toml:/traefik.toml
-      - ${CONFIG_DIR}/traefik/acme.json:/acme.json
-      - ${CONFIG_DIR}/traefik/.htpasswd:/.htpasswd
-      - ${CONFIG_DIR}/traefik/logs:/logs
     environment:
       - CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}
       - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
 
-  mysql:
-    networks:
-      - local
-    env_file: .env
-    image: mariadb:10.2
+  db:
+    image: mariadb:10.5
     restart: always
     volumes:
-      - ./db:/var/lib/mysql
+      - ${CONFIG_DIR}/db:/var/lib/mysql
 
   cache:
-    networks:
-      - local
     image: redis:alpine
     restart: always
 
   panel:
-    networks:
-      - local
-      - pterodactyl
-    depends_on:
+   depends_on:
       - cache
-      - mysql
-    env_file: .env
-    image: ccarney16/pterodactyl-panel:latest
+      - db
+    image: ccarney16/pterodactyl-panel:v0.7.17
     restart: always
     volumes:
-      - ./data:/data
+      - ${CONFIG_DIR}/panel:/data
     labels:
       - "traefik.backend=panel.${DOMAIN}"
       - "traefik.docker.network=pterodactyl"
@@ -56,20 +41,17 @@ services:
       - "traefik.port=80"
 
   daemon:
-    networks:
-      - local
-      - pterodactyl
     depends_on:
       - panel
-    image: ccarney16/pterodactyl-daemon:latest
+    image: ccarney16/pterodactyl-daemon:v0.6.13
     ports:
       - 2022:2022
     privileged: true
     restart: always
     volumes:
-      - /srv/daemon/config:/srv/daemon/config
-      - /srv/daemon/packs:/srv/daemon/packs
-      - /srv/daemon-data:/srv/daemon-data
+      - ${CONFIG_DIR}/daemon/daemon-config:/srv/daemon/config
+      - ${CONFIG_DIR}/daemon/daemon-packs:/srv/daemon/packs
+      - ${CONFIG_DIR}/daemon/daemon-data:/srv/daemon-data
       - /tmp/pterodactyl:/tmp/pterodactyl
       - /etc/localtime:/etc/localtime
       - ${DOCKER_ROOT:-/var/lib/docker}:${DOCKER_ROOT:-/var/lib/docker}

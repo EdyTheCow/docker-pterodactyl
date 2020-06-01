@@ -1,0 +1,4 @@
+compose/.env
+data/panel
+data/daemon
+data/mardiadb
