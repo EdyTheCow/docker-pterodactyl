@@ -10,12 +10,11 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${CONFIG_DIR}/traefik/traefik.toml:/traefik.toml
-    environment:
-      - CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}
-      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - ${CONFIG_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml
 
   db:
+    env_file:
+      - .env
     image: mariadb:10.5
     restart: always
     volumes:
@@ -26,7 +25,9 @@ services:
     restart: always
 
   panel:
-   depends_on:
+    env_file:
+      - .env
+    depends_on:
       - cache
       - db
     image: ccarney16/pterodactyl-panel:v0.7.17
@@ -34,11 +35,8 @@ services:
     volumes:
       - ${CONFIG_DIR}/panel:/data
     labels:
-      - "traefik.backend=panel.${DOMAIN}"
-      - "traefik.docker.network=pterodactyl"
-      - "traefik.frontend.rule=Host:panel.${DOMAIN}"
-      - "traefik.enable=true"
-      - "traefik.port=80"
+      - "traefik.http.routers.panel.rule=Host(`panel.${DOMAIN}`)"
+      - "traefik.http.routers.panel.tls=true"
 
   daemon:
     depends_on:
@@ -57,12 +55,9 @@ services:
       - ${DOCKER_ROOT:-/var/lib/docker}:${DOCKER_ROOT:-/var/lib/docker}
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:${DOCKER_SOCKET:-/var/run/docker.sock}
     labels:
-      - "traefik.backend=node.${DOMAIN}"
-      - "traefik.docker.network=pterodactyl"
-      - "traefik.frontend.rule=Host:node.${DOMAIN}"
-      - "traefik.enable=true"
-      - "traefik.port=443"
+      - "traefik.http.routers.daemon.rule=Host(`node.${DOMAIN}`)"
+      - "traefik.http.routers.panel.tls=true"
       - "traefik.http.middlewares.testheader.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
-      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=panel.${DOMAIN}
+      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=https://panel.${DOMAIN}"
       - "traefik.http.middlewares.testheader.headers.accesscontrolmaxage=100"
       - "traefik.http.middlewares.testheader.headers.addvaryheader=true"

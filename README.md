@@ -11,12 +11,7 @@ As long docker and docker compose are correctly installed, it doesn’t matter w
 ### Requirements
 - Basic command line knowledge
 - A domain behind Cloudflare
-
-### Installing docker & docker-compose
-Skip this step if you already have docker and compose installed!
-
-- [Installing Docker](https://docs.docker.com/engine/install/ubuntu/)
-- [Installing Docker Compose](https://docs.docker.com/compose/install/)
-
+- [Docker](https://docs.docker.com/engine/install/ubuntu/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
 :construction: Work in progress! :construction:
