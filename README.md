@@ -72,6 +72,9 @@ Change `sftp path` to `/srv/docker/pterodactyl-docker/data/daemon/daemon-data`. 
 docker-compose up -d daemon
  ```
 
+# Known issues
+- 2-factor verification outputs invalid credentials error when trying to login using 2FA
+
 # Credits
 - Logo created for this project by Wob - [Dribbble.com/wob](https://dribbble.com/wob)
 - Docker images for the panel and daemon created by [ccarney16/pterodactyl-docker ](https://github.com/ccarney16/pterodactyl-docker)
