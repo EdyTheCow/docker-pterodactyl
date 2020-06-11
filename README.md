@@ -32,6 +32,11 @@ Enter the compose directory and rename `.env.example` to `.env`. The most import
 | MYSQL_ROOT_PASSWORD | - | Use a password generator to create a strong password |
 | MYSQL_PASSWORD | - | Don't reuse your root's password for this, generate a new one |
 
+<b>Start Traefik</b><br />
+ ```
+docker-compose up -d traefik
+ ```
+
 ### Setting up the panel
 
 <b>Initialize the database container</b><br />
