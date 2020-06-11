@@ -32,6 +32,11 @@ services:
       - db
     image: ccarney16/pterodactyl-panel:v0.7.17
     restart: always
+    environment:
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - APP_URL=https://${DOMAIN}
     volumes:
       - ${CONFIG_DIR}/panel:/data
     labels:
@@ -49,15 +54,16 @@ services:
     volumes:
       - ${CONFIG_DIR}/daemon/daemon-config:/srv/daemon/config
       - ${CONFIG_DIR}/daemon/daemon-packs:/srv/daemon/packs
-      - ${CONFIG_DIR}/daemon/daemon-data:/srv/daemon-data
+      - ${CONFIG_DIR}/daemon/daemon-data:/srv/docker/pterodactyl-docker/data/daemon/daemon-data
       - /tmp/pterodactyl:/tmp/pterodactyl
       - /etc/localtime:/etc/localtime
       - ${DOCKER_ROOT:-/var/lib/docker}:${DOCKER_ROOT:-/var/lib/docker}
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:${DOCKER_SOCKET:-/var/run/docker.sock}
     labels:
       - "traefik.http.routers.daemon.rule=Host(`node.${DOMAIN}`)"
-      - "traefik.http.routers.panel.tls=true"
+      - "traefik.http.routers.daemon.tls=true"
+      - "traefik.http.services.daemon.loadbalancer.server.port=443"
       - "traefik.http.middlewares.testheader.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
-      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=https://panel.${DOMAIN}"
+      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=panel.${DOMAIN}"
       - "traefik.http.middlewares.testheader.headers.accesscontrolmaxage=100"
       - "traefik.http.middlewares.testheader.headers.addvaryheader=true"
