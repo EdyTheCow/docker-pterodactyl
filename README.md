@@ -27,7 +27,7 @@ By default the guide assumes you're cloning this repository into `/srv/docker/` 
 │   ├── db
 │   └── traefik
 ```
-Allowing you to only worry about one directory when backing up or moving the whole setup. If you wish to use the default pterodactyl panel path for daemon change `DATA_DIR_DAEMON` to `/srv` and `CONTAINER_DAEMON_DATA` to `/srv/daemon-data` if you make these changes, you don't need to change `sftp path` in `core.json` when instructed later in the guide.
+Allowing you to only worry about one directory when backing up or moving the whole setup. If you wish to use the default pterodactyl panel path for daemon change `DATA_DIR_DAEMON` to `/srv` and `CONTAINER_DAEMON_DATA` to `/srv/daemon-data` if you make these changes, you don't need to change `Daemon Server File Directory` when creating a new node later in the guide.
 
 # Installation
 
@@ -75,12 +75,11 @@ Login to the panel using newly created user at panel.DOMAIN you specified earlie
 ### Setting up the daemon
 Navigate to admin control panel and add a new `Location`. Then navigate to `Nodes` and create a node.
 - Set `FQDN` to `node.DOMAIN` you specified earlier
-- Set the node to `Behind Proxy`
+- Set it to `Behind Proxy`
 - Set the `Daemon Port` to `443`
+- Set `Daemon Server File Directory` to `/srv/docker/pterodactyl-docker/data/daemon/data`
 
-Navigate to `Configuration` tab and copy the contents into `daemon/config/core.json`. Edit `core.json` and change `remote base` url from `http` to `https`
-
-Change `sftp path` to `/srv/docker/pterodactyl-docker/data/daemon/data`. Full path is required so SFTP is able to access the daemon data. Make sure it matches your `CONTAINER_DAEMON_DATA` variable path!
+Click `Create Node` and Navigate to `Configuration` tab and copy the contents into `daemon/config/core.json`.
 
 <b>Start the daemon</b><br />
  ```
