@@ -14,10 +14,25 @@ We’ll be using docker, docker-compose and CloudFlare for DNS challenges to gen
 - [Docker](https://docs.docker.com/engine/install/ubuntu/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
+### Understanding the data structure
+By default the guide assumes you're cloning this repository into `/srv/docker/` directory! Current data structure looks like this:
+
+```
+├── /srv/docker/pterodactyl-docker/data
+│   ├── daemon
+│   │   ├── config
+│   │   ├── packs
+│   │   ├── data
+│   ├── panel
+│   ├── db
+│   └── traefik
+```
+Allowing you to only worry about one directory when backing up or moving the whole setup. If you wish to use the default pterodactyl panel path for daemon change `DATA_DIR_DAEMON` to `/srv` and `CONTAINER_DAEMON_DATA` to `/srv/daemon-data` if you make these changes, you don't need to change `sftp path` in `core.json` when instructed later in the guide.
+
 # Installation
 
 ### Basic configuration
-Once you have met all of the requirements, start by cloning this repository
+Once you have met all of the requirements, start by cloning this repository into `/srv/docker/`
 ```
 git clone https://github.com/EdyTheCow/pterodactyl-docker.git
 ```
@@ -27,7 +42,7 @@ Enter the compose directory and rename `.env.example` to `.env`. The most import
 | Variable | Example | Description |
 |-|:-:|-|
 | DOMAIN | example.com | Enter a domain that is behind CloudFlare |
-| CF_API_EMAIL | your@email.com | You CloudFlare's account email |
+| CF_API_EMAIL | your@email.com | Your CloudFlare's account email |
 | CF_API_KEY | - | Go to your CloudFlare's profile and navigate to "API Tokens". Copy the "Global API Key" |
 | MYSQL_ROOT_PASSWORD | - | Use a password generator to create a strong password |
 | MYSQL_PASSWORD | - | Don't reuse your root's password for this, generate a new one |
@@ -55,17 +70,17 @@ docker-compose up -d panel
  ```
 docker-compose run --rm panel php artisan p:user:make
  ```
-Login to the panel using newly created user at the domain you specified earlier.
+Login to the panel using newly created user at panel.DOMAIN you specified earlier
  
 ### Setting up the daemon
-Navigate to admin control panel and add a new `Location`. Then navigate to `Nodes` to create a new one.
-- Set `FQDN` to `node.YourDomain.com` 
+Navigate to admin control panel and add a new `Location`. Then navigate to `Nodes` and create a node.
+- Set `FQDN` to `node.DOMAIN` you specified earlier
 - Set the node to `Behind Proxy`
 - Set the `Daemon Port` to `443`
 
-Navigate to `Configuration` tab and copy the contents to `daemon/daemon-config/core.json`. Edit `core.json` and change `remote base` url to `https`. 
+Navigate to `Configuration` tab and copy the contents into `daemon/config/core.json`. Edit `core.json` and change `remote base` url from `http` to `https`
 
-Change `sftp path` to `/srv/docker/pterodactyl-docker/data/daemon/daemon-data`. This is to change the default location of daemon's data for more organization. I will add additional variables to make this more flexiable soon. As of right now, make sure your cloned directory is in `/srv/docker/` or edit the volume paths manually in `docker-compose.yml`.
+Change `sftp path` to `/srv/docker/pterodactyl-docker/data/daemon/data`. Full path is required so SFTP is able to access the daemon data. Make sure it matches your `CONTAINER_DAEMON_DATA` variable path!
 
 <b>Start the daemon</b><br />
  ```

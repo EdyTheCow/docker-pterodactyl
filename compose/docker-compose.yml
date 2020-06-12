@@ -10,7 +10,7 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${CONFIG_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - ${DATA_DIR_TRAEFIK}/traefik/traefik.toml:/etc/traefik/traefik.toml
 
   db:
     env_file:
@@ -18,7 +18,7 @@ services:
     image: mariadb:10.5
     restart: always
     volumes:
-      - ${CONFIG_DIR}/db:/var/lib/mysql
+      - ${DATA_DIR_DB}/db:/var/lib/mysql
 
   cache:
     image: redis:alpine
@@ -38,9 +38,9 @@ services:
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - APP_URL=https://${DOMAIN}
     volumes:
-      - ${CONFIG_DIR}/panel:/data
+      - ${DATA_DIR_PANEL}/panel:/data
     labels:
-      - "traefik.http.routers.panel.rule=Host(`panel.${DOMAIN}`)"
+      - "traefik.http.routers.panel.rule=Host(`${SUBDOMAIN_PANEL}.${DOMAIN}`)"
       - "traefik.http.routers.panel.tls=true"
 
   daemon:
@@ -52,18 +52,18 @@ services:
     privileged: true
     restart: always
     volumes:
-      - ${CONFIG_DIR}/daemon/daemon-config:/srv/daemon/config
-      - ${CONFIG_DIR}/daemon/daemon-packs:/srv/daemon/packs
-      - ${CONFIG_DIR}/daemon/daemon-data:/srv/docker/pterodactyl-docker/data/daemon/daemon-data
+      - ${DATA_DIR_DAEMON}/daemon/config:/srv/daemon/config
+      - ${DATA_DIR_DAEMON}/daemon/packs:/srv/daemon/packs
+      - ${DATA_DIR_DAEMON}/daemon/data:${CONTAINER_DAEMON_DATA}
       - /tmp/pterodactyl:/tmp/pterodactyl
       - /etc/localtime:/etc/localtime
       - ${DOCKER_ROOT:-/var/lib/docker}:${DOCKER_ROOT:-/var/lib/docker}
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:${DOCKER_SOCKET:-/var/run/docker.sock}
     labels:
-      - "traefik.http.routers.daemon.rule=Host(`node.${DOMAIN}`)"
+      - "traefik.http.routers.daemon.rule=Host(`${SUBDOMAIN_DAEMON}.${DOMAIN}`)"
       - "traefik.http.routers.daemon.tls=true"
       - "traefik.http.services.daemon.loadbalancer.server.port=443"
       - "traefik.http.middlewares.testheader.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
-      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=panel.${DOMAIN}"
+      - "traefik.http.middlewares.testheader.headers.accesscontrolalloworigin=${SUBDOMAIN_PANEL}.${DOMAIN}"
       - "traefik.http.middlewares.testheader.headers.accesscontrolmaxage=100"
       - "traefik.http.middlewares.testheader.headers.addvaryheader=true"
