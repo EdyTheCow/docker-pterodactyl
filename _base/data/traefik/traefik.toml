@@ -1,6 +1,6 @@
 [global]
   checkNewVersion = true
-  sendAnonymousUsage = true
+  sendAnonymousUsage = false
 
 [entryPoints]
   [entryPoints.web]
@@ -11,7 +11,7 @@
 
 [providers.docker]
 
-[certificatesResolvers.myresolver.acme]
-  [certificatesResolvers.myresolver.acme.dnsChallenge]
+[certificatesResolvers.base.acme]
+  [certificatesResolvers.base.acme.dnsChallenge]
     provider = "cloudflare"
     delayBeforeCheck = 0
