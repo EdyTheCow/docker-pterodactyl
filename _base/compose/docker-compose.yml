@@ -16,4 +16,4 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${DATA_DIR_TRAEFIK}/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - ${DATA_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml

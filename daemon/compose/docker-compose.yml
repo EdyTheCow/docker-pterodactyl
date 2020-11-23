@@ -1,0 +1,29 @@
+version: '3.7'
+
+networks:
+  pterodactyl:
+    external: true
+
+services:
+
+  daemon:
+    image: ccarney16/pterodactyl-daemon:${DAEMON_VERSION}
+    ports:
+      - 2022:2022
+    networks:
+      - pterodactyl
+    privileged: true
+    restart: always
+    working_dir: ${DATA_DIR_DAEMON}
+    environment:
+      - TZ=${DAEMON_TIMEZONE:-CET}
+    volumes:
+      - ${DATA_DIR_DAEMON}:${DATA_DIR_DAEMON}
+      - ${DATA_DIR}/daemon:/etc/pterodactyl
+      - /tmp/pterodactyl:/tmp/pterodactyl
+      - ${DAEMON_DOCKER_ROOT:-/var/lib/docker}:${DAEMON_DOCKER_ROOT:-/var/lib/docker}
+      - ${DAEMON_DOCKER_SOCKET:-/var/run/docker.sock}:${DAEMON_DOCKER_SOCKET:-/var/run/docker.sock}
+    labels:
+      - "traefik.http.routers.daemon.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.daemon.tls=true"
+      - "traefik.http.services.daemon.loadbalancer.server.port=443"

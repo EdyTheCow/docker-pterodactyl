@@ -1,0 +1,69 @@
+version: '3.7'
+
+networks:
+  pterodactyl:
+    external: true
+  local:
+    external: false
+
+services:
+
+  mysql:
+    image: mariadb:10.5
+    restart: always
+    networks:
+      - local
+    env_file:
+      - .env
+    volumes:
+      - ${DATA_DIR}/mariadb:/var/lib/mysql
+
+  panel:
+    image: ccarney16/pterodactyl-panel:${PANEL_VERSION}
+    restart: always
+    networks:
+      - local
+      - pterodactyl
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+      - cache
+    environment:
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - ${DATA_DIR}/panel:/data
+    labels:
+      - "traefik.http.routers.panel.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.panel.tls=true"
+      - "traefik.docker.network=pterodactyl"
+
+  worker:
+    image: ccarney16/pterodactyl-panel:${PANEL_VERSION}
+    restart: always
+    command: p:worker
+    env_file:
+      - .env
+    networks:
+      - local
+    volumes:
+      - ${DATA_DIR}/panel:/data
+
+  cron:
+    image: ccarney16/pterodactyl-panel:${PANEL_VERSION}
+    restart: always
+    command: p:cron
+    env_file:
+      - .env
+    networks:
+      - local
+    volumes:
+      - ${DATA_DIR}/panel:/data
+
+  cache:
+    image: redis:alpine
+    restart: always
+    networks:
+      - local
