@@ -17,7 +17,11 @@ We’ll be using docker, docker-compose and CloudFlare for DNS challenges to gen
 
 ### Setting up Cloudflare
 
-TODO
+<b>Change settings</b><br />
+Login into your CloudFlare account and navigate to the domain you'll be using for this guide. Click on `SSL/TLS` tab and make sure your `encryption mode` is set to `Full`. Then navigate to `Edge Certificates` and enable `Always Use HTTPS`.
+
+<b>Set up DNS</b><br />
+Navigate to `DNS` tab and create `A record` for your panel pointing to server A and second `A record` pointing to server B, your daemon's server. Make sure both of records are proxied through Cloudflare. (The orange cloud should be on).
 
 
 # Installation
