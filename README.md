@@ -11,84 +11,111 @@ We’ll be using docker, docker-compose and CloudFlare for DNS challenges to gen
 ### Requirements
 - Basic command line knowledge
 - A domain behind Cloudflare
+- Two or more servers
 - [Docker](https://docs.docker.com/engine/install/ubuntu/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-### Understanding the data structure
-By default the guide assumes you're cloning this repository into `/srv/docker/` directory! Current data structure looks like this:
+### Setting up Cloudflare
 
-```
-├── /srv/docker/pterodactyl-docker/data
-│   ├── daemon
-│   │   ├── config
-│   │   ├── packs
-│   │   ├── data
-│   ├── panel
-│   ├── db
-│   └── traefik
-```
-Allowing you to only worry about one directory when backing up or moving the whole setup. If you wish to use the default pterodactyl panel path for daemon change `DATA_DIR_DAEMON` to `/srv` and `CONTAINER_DAEMON_DATA` to `/srv/daemon-data` if you make these changes, you don't need to change `Daemon Server File Directory` when creating a new node later in the guide.
+TODO
+
 
 # Installation
+**Notes before installation**
+- By default the guide assumes you're cloning this repository into `/srv/docker/` directory! 
+- It's not recommended to run panel and daemon on the same server! While this may be possible, it may cause issues.
 
-### Basic configuration
-Once you have met all of the requirements, start by cloning this repository into `/srv/docker/`
+### Setting up Traefik
+<b>Clone repository</b><br />
+Start by cloning this repository into `/srv/docker/`. 
 ```
 git clone https://github.com/EdyTheCow/pterodactyl-docker.git
 ```
 
-Enter the compose directory and rename `.env.example` to `.env`. The most important variables to change right now are:
+<b>Set variables</b><br />
+Navigate to `_base/compose/` directory, rename .env.example to .env and change these variables:
 
 | Variable | Example | Description |
 |-|:-:|-|
-| DOMAIN | example.com | Enter a domain that is behind CloudFlare |
 | CF_API_EMAIL | your@email.com | Your CloudFlare's account email |
 | CF_API_KEY | - | Go to your CloudFlare's profile and navigate to "API Tokens". Copy the "Global API Key" |
-| MYSQL_ROOT_PASSWORD | - | Use a password generator to create a strong password |
-| MYSQL_PASSWORD | - | Don't reuse your root's password for this, generate a new one |
 
-<b>Start Traefik</b><br />
+<b>Start traefik container</b><br />
  ```
 docker-compose up -d traefik
  ```
 
-### Setting up the panel
+### Panel - (server A)
+<b>Set variables</b><br />
+Navigate to `panel/compose/` directory and rename .env.example to .env. The most important variables to change right now are:
 
-<b>Initialize the database container</b><br />
-Allow around two minutes. Starting the panel before database is fully initialized will cause errors!
+| Variable | Example | Description |
+|-|:-:|-|
+| PANEL_DOMAIN | panel.example.com | Enter a domain that's behind CloudFlare |
+| APP_URL | https://panel.example.com | Same as `PANEL_DOMAIN` but with `https://` included|
+| MYSQL_ROOT_PASSWORD | - | Use a password generator to create a strong password |
+| MYSQL_PASSWORD | - | Don't reuse your root's password for this, generate a new one |
+
+
+<b>Initialize database container</b><br />
+Allow around a minute or two before starting the panel. Starting it before database is fully initialized may cause errors!
  ```
-docker-compose up -d db 
+docker-compose up -d mysql
  ```
 
-<b>Start the panel container</b><br />
+<b>Start panel container</b><br />
 Allow around two minutes to be fully initialized.
  ```
 docker-compose up -d panel
  ```
- 
-<b>Create a user</b><br />
+
+<b>Start panel's worker and cron containers</b><br />
+ ```
+docker-compose up -d worker cron
+ ```
+
+<b>Create a new user</b><br />
  ```
 docker-compose run --rm panel php artisan p:user:make
  ```
-Login to the panel using newly created user at panel.DOMAIN you specified earlier
- 
-### Setting up the daemon
+Login into the panel using newly created user by navigating to domain you've set in `PANEL_DOMAIN`
+
+<b>Create a new node</b><br />
 Navigate to admin control panel and add a new `Location`. Then navigate to `Nodes` and create a node.
-- Set `FQDN` to `node.DOMAIN` you specified earlier
-- Set it to `Behind Proxy`
-- Set the `Daemon Port` to `443`
-- Set `Daemon Server File Directory` to `/srv/docker/pterodactyl-docker/data/daemon/data`
 
-Click `Create Node` and Navigate to `Configuration` tab and copy the contents into `daemon/config/core.json`.
+| Setting | Set to | Description |
+|-|:-:|-|
+| FQDN | `DAEMON_DOMAIN` | This is your daemon's domain you'll have to specify later in guide. Example: `node.example.com`|
+| Behind Proxy | Behind Proxy | Set this to `Behind Proxy` for Traefik to work properly|
+| Daemon Port | 443 | Change the default port |
+| Daemon Server File Directory | `DATA_DIR_DAEMON` | By default it should be set to `/srv/docker/pterodactyl-docker/daemon/data/daemon/servers`. This setting can be changed if desired and is found in `daemon/compose/.env-example` |
 
-<b>Start the daemon</b><br />
+Rest of the settings can be set as you desire.
+
+### Daemon - (Server B)
+
+Follow the same steps from `Setting up Traefik` section on your second server for daemon.
+
+<b>Setting variables</b><br />
+Navigate to `panel/daemon/` directory and rename .env.example to .env and change these variables:
+
+| Variable | Example | Description |
+|-|:-:|-|
+| DAEMON_DOMAIN | node.example.com | Enter a domain that's behind CloudFlare |
+
+<b>Copying daemon's config</b><br />
+Navigate to `PANEL_DOMAIN` and find the node you created earlier. Click on `Configuration` tab and copy the contents into `daemon/data/config/config.yml`. Sometimes the `remote` url inside `config.yml` may be set to `http://` change it to `https://`.
+
+<b>Start daemon container</b><br />
  ```
 docker-compose up -d daemon
  ```
 
+
 # Known issues
-- 2-factor verification outputs invalid credentials error when trying to login using 2FA
+- None
 
 # Credits
 - Logo created for this project by Wob - [Dribbble.com/wob](https://dribbble.com/wob)
 - Docker images for the panel and daemon created by [ccarney16/pterodactyl-docker ](https://github.com/ccarney16/pterodactyl-docker)
+

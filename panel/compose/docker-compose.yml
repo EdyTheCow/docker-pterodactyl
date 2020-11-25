@@ -36,7 +36,7 @@ services:
     volumes:
       - ${DATA_DIR}/panel:/data
     labels:
-      - "traefik.http.routers.panel.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.panel.rule=Host(`${PANEL_DOMAIN}`)"
       - "traefik.http.routers.panel.tls=true"
       - "traefik.docker.network=pterodactyl"
 
