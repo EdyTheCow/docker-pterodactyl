@@ -62,7 +62,7 @@ services:
     restart: always
 
   panel:
-    image: ghcr.io/pterodactyl/panel:latest
+    image: ghcr.io/pterodactyl/panel:v1.3.2
     restart: always
     links:
       - database
@@ -73,7 +73,7 @@ services:
       - "${DATA_DIR}/panel/certs/:/etc/letsencrypt/"
       - "${DATA_DIR}/panel/logs/:/app/storage/logs"
     labels:
-      - "traefik.http.routers.pterodactyl-panel.rule=Host(`panel.example.com`)"
+      - "traefik.http.routers.pterodactyl-panel.rule=Host(`${TRAEFIK_PANEL_DOMAIN}`)"
       - "traefik.http.routers.pterodactyl-panel.tls=true"
       - "traefik.http.routers.pterodactyl-panel.tls.certresolver=letsencrypt"
     environment:

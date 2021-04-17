@@ -36,13 +36,13 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "/var/lib/docker/containers/:/var/lib/docker/containers/"
-      - "/etc/pterodactyl/:/etc/pterodactyl/"
+      - "${DATA_DIR}/wings/etc/:/etc/pterodactyl/"
       - "/var/lib/pterodactyl/:/var/lib/pterodactyl/"
       - "/var/log/pterodactyl/:/var/log/pterodactyl/"
       - "/tmp/pterodactyl/:/tmp/pterodactyl/"
       - "/etc/ssl/certs:/etc/ssl/certs:ro"
     labels:
-      - "traefik.http.routers.pterodactyl-wings.rule=Host(`node.example.com`)"
+      - "traefik.http.routers.pterodactyl-wings.rule=Host(`${TRAEFIK_WINGS_DOMAIN`)"
       - "traefik.http.routers.pterodactyl-wings.tls=true"
       - "traefik.http.services.pterodactyl-wings.loadbalancer.server.port=80"
       - "traefik.http.routers.pterodactyl-wings.tls.certresolver=letsencrypt"

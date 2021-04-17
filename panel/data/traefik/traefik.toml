@@ -2,9 +2,18 @@
   checkNewVersion = false
   sendAnonymousUsage = false
 
+[log]
+  level = "ERROR"
+
 [entryPoints]
   [entryPoints.web]
     address = ":80"
+
+  [entryPoints.web.http]
+    [entryPoints.web.http.redirections]
+      [entryPoints.web.http.redirections.entryPoint]
+        to = "websecure"
+        scheme = "https"
 
   [entryPoints.websecure]
     address = ":443"
