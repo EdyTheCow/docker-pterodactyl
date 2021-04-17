@@ -75,7 +75,7 @@ Navigate to admin control panel and add a new `Location`. Then navigate to `Node
 
 | Setting | Set to | Description |
 |-|:-:|-|
-| FQDN | Domain you pointed to wings server earlier | This is your wings domain|
+| FQDN | Wings domain | Domain you pointed to wings server|
 | Behind Proxy | Behind Proxy | Set this to `Behind Proxy` for Traefik to work properly|
 | Daemon Port | 80 | Change the default port |
 
