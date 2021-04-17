@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+
+  traefik:
+    image: traefik:v2.3
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - local
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "${DATA_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml"
+      - "${DATA_DIR}/traefik/acme.json:/acme.json"
+
+  wings:
+    image: ghcr.io/pterodactyl/wings:v1.3.1
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - wings0
+      - local
+    ports:
+      - "2022:2022"
+    tty: true
+    environment:
+      TZ: "UTC"
+      WINGS_UID: 988
+      WINGS_GID: 988
+      WINGS_USERNAME: pterodactyl
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/var/lib/docker/containers/:/var/lib/docker/containers/"
+      - "/etc/pterodactyl/:/etc/pterodactyl/"
+      - "/var/lib/pterodactyl/:/var/lib/pterodactyl/"
+      - "/var/log/pterodactyl/:/var/log/pterodactyl/"
+      - "/tmp/pterodactyl/:/tmp/pterodactyl/"
+      - "/etc/ssl/certs:/etc/ssl/certs:ro"
+    labels:
+      - "traefik.http.routers.pterodactyl-wings.rule=Host(`node.example.com`)"
+      - "traefik.http.routers.pterodactyl-wings.tls=true"
+      - "traefik.http.services.pterodactyl-wings.loadbalancer.server.port=80"
+      - "traefik.http.routers.pterodactyl-wings.tls.certresolver=letsencrypt"
+
+networks:
+  local:
+    external: false
+  wings0:
+    name: wings0
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.22.0.0/16"
+    driver_opts:
+      com.docker.network.bridge.name: wings0

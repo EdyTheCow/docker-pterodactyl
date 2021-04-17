@@ -1,69 +1,95 @@
-version: '3.7'
+version: '3.8'
+x-common:
+  database:
+    &db-environment
+    # Do not remove the "&db-password" from the end of the line below, it is important
+    # for Panel functionality.
+    MYSQL_PASSWORD: &db-password "CHANGE_ME"
+    MYSQL_ROOT_PASSWORD: "CHANGE_ME_TOO"
+  panel:
+    &panel-environment
+    APP_URL: "https://panel.example.com"
+    # A list of valid timezones can be found here: http://php.net/manual/en/timezones.php
+    APP_TIMEZONE: "UTC"
+    APP_SERVICE_AUTHOR: "noreply@example.com"
+    # Uncomment the line below and set to a non-empty value if you want to use Let's Encrypt
+    # to generate an SSL certificate for the Panel.
+    # LE_EMAIL: ""
+  mail:
+    &mail-environment
+    MAIL_FROM: "noreply@example.com"
+    MAIL_DRIVER: "smtp"
+    MAIL_HOST: "mail"
+    MAIL_PORT: "1025"
+    MAIL_USERNAME: ""
+    MAIL_PASSWORD: ""
+    MAIL_ENCRYPTION: "true"
 
-networks:
-  pterodactyl:
-    external: true
-  local:
-    external: false
+#
+# ------------------------------------------------------------------------------------------
+# DANGER ZONE BELOW
+#
+# The remainder of this file likely does not need to be changed. Please only make modifications
+# below if you understand what you are doing.
+#
 
 services:
 
-  mysql:
-    image: mariadb:10.5
+  traefik:
+    image: traefik:v2.3
     restart: always
-    networks:
-      - local
-    env_file:
-      - .env
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - ${DATA_DIR}/mariadb:/var/lib/mysql
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "${DATA_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml"
+      - "${DATA_DIR}/traefik/acme.json:/acme.json"
 
-  panel:
-    image: ccarney16/pterodactyl-panel:${PANEL_VERSION}
+  database:
+    image: library/mysql:8.0
     restart: always
-    networks:
-      - local
-      - pterodactyl
-    env_file:
-      - .env
-    depends_on:
-      - mysql
-      - cache
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - "${DATA_DIR}/database:/var/lib/mysql"
     environment:
-      - DB_DATABASE=${MYSQL_DATABASE}
-      - DB_USERNAME=${MYSQL_USER}
-      - DB_PASSWORD=${MYSQL_PASSWORD}
-    volumes:
-      - ${DATA_DIR}/panel:/data
-    labels:
-      - "traefik.http.routers.panel.rule=Host(`${PANEL_DOMAIN}`)"
-      - "traefik.http.routers.panel.tls=true"
-      - "traefik.docker.network=pterodactyl"
-
-  worker:
-    image: ccarney16/pterodactyl-panel:${PANEL_VERSION}
-    restart: always
-    command: p:worker
-    env_file:
-      - .env
-    networks:
-      - local
-    volumes:
-      - ${DATA_DIR}/panel:/data
-
-  cron:
-    image: ccarney16/pterodactyl-panel:${PANEL_VERSION}
-    restart: always
-    command: p:cron
-    env_file:
-      - .env
-    networks:
-      - local
-    volumes:
-      - ${DATA_DIR}/panel:/data
+      <<: *db-environment
+      MYSQL_DATABASE: "panel"
+      MYSQL_USER: "pterodactyl"
 
   cache:
     image: redis:alpine
     restart: always
-    networks:
-      - local
+
+  panel:
+    image: ghcr.io/pterodactyl/panel:latest
+    restart: always
+    links:
+      - database
+      - cache
+    volumes:
+      - "${DATA_DIR}/panel/var/:/app/var/"
+      - "${DATA_DIR}/panel/nginx/:/etc/nginx/conf.d/"
+      - "${DATA_DIR}/panel/certs/:/etc/letsencrypt/"
+      - "${DATA_DIR}/panel/logs/:/app/storage/logs"
+    labels:
+      - "traefik.http.routers.pterodactyl-panel.rule=Host(`panel.example.com`)"
+      - "traefik.http.routers.pterodactyl-panel.tls=true"
+      - "traefik.http.routers.pterodactyl-panel.tls.certresolver=letsencrypt"
+    environment:
+      <<: *panel-environment
+      <<: *mail-environment
+      DB_PASSWORD: *db-password
+      APP_ENV: "production"
+      APP_ENVIRONMENT_ONLY: "false"
+      CACHE_DRIVER: "redis"
+      SESSION_DRIVER: "redis"
+      QUEUE_DRIVER: "redis"
+      REDIS_HOST: "cache"
+      DB_HOST: "database"
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
