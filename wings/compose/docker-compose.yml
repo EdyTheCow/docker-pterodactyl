@@ -42,7 +42,7 @@ services:
       - "/tmp/pterodactyl/:/tmp/pterodactyl/"
       - "/etc/ssl/certs:/etc/ssl/certs:ro"
     labels:
-      - "traefik.http.routers.pterodactyl-wings.rule=Host(`${TRAEFIK_WINGS_DOMAIN`)"
+      - "traefik.http.routers.pterodactyl-wings.rule=Host(`${TRAEFIK_WINGS_DOMAIN}`)"
       - "traefik.http.routers.pterodactyl-wings.tls=true"
       - "traefik.http.services.pterodactyl-wings.loadbalancer.server.port=80"
       - "traefik.http.routers.pterodactyl-wings.tls.certresolver=letsencrypt"
