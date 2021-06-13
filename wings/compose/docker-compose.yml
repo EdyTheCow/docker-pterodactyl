@@ -18,7 +18,7 @@ services:
       - "${DATA_DIR}/traefik/acme.json:/acme.json"
 
   wings:
-    image: ghcr.io/pterodactyl/wings:v1.4.2
+    image: ghcr.io/pterodactyl/wings:v1.4.3
     env_file:
       - .env
     restart: always
