@@ -5,16 +5,13 @@ x-common:
     # Do not remove the "&db-password" from the end of the line below, it is important
     # for Panel functionality.
     MYSQL_PASSWORD: &db-password "CHANGE_ME"
-    MYSQL_ROOT_PASSWORD: "CHANGE_ME_TOO"
+    MYSQL_ROOT_PASSWORD: "CHANGE_ME"
   panel:
     &panel-environment
     APP_URL: "https://panel.example.com"
     # A list of valid timezones can be found here: http://php.net/manual/en/timezones.php
     APP_TIMEZONE: "UTC"
-    APP_SERVICE_AUTHOR: "noreply@example.com"
-    # Uncomment the line below and set to a non-empty value if you want to use Let's Encrypt
-    # to generate an SSL certificate for the Panel.
-    # LE_EMAIL: ""
+    APP_SERVICE_AUTHOR: "admin@example.com"
   mail:
     &mail-environment
     MAIL_FROM: "noreply@example.com"
@@ -35,20 +32,11 @@ x-common:
 
 services:
 
-  traefik:
-    image: traefik:v2.3
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "${DATA_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml"
-      - "${DATA_DIR}/traefik/acme.json:/acme.json"
-
   database:
     image: library/mysql:8.0
     restart: always
+    networks:
+      - local
     command: --default-authentication-plugin=mysql_native_password
     volumes:
       - "${DATA_DIR}/database:/var/lib/mysql"
@@ -60,25 +48,24 @@ services:
   cache:
     image: redis:alpine
     restart: always
+    networks:
+      - local
 
   panel:
-    image: ghcr.io/pterodactyl/panel:v1.4.2
+    image: ghcr.io/pterodactyl/panel:v1.6.2
     restart: always
+    networks:
+      - pterodactyl
+      - local
     links:
       - database
       - cache
     volumes:
       - "${DATA_DIR}/panel/var/:/app/var/"
-      - "${DATA_DIR}/panel/nginx/:/etc/nginx/conf.d/"
-      - "${DATA_DIR}/panel/certs/:/etc/letsencrypt/"
       - "${DATA_DIR}/panel/logs/:/app/storage/logs"
-    labels:
-      - "traefik.http.routers.pterodactyl-panel.rule=Host(`${TRAEFIK_PANEL_DOMAIN}`)"
-      - "traefik.http.routers.pterodactyl-panel.tls=true"
-      - "traefik.http.routers.pterodactyl-panel.tls.certresolver=letsencrypt"
+      - "${DATA_DIR}/panel/nginx/:/etc/nginx/conf.d/"
     environment:
-      <<: *panel-environment
-      <<: *mail-environment
+      <<: [*panel-environment, *mail-environment]
       DB_PASSWORD: *db-password
       APP_ENV: "production"
       APP_ENVIRONMENT_ONLY: "false"
@@ -87,8 +74,25 @@ services:
       QUEUE_DRIVER: "redis"
       REDIS_HOST: "cache"
       DB_HOST: "database"
+      TRUSTED_PROXIES: "*"
+    labels:
+      # HTTP
+      - "traefik.http.routers.pterodactyl_panel.entrypoints=web"
+      - "traefik.http.routers.pterodactyl_panel.rule=Host(`${PANEL_DOMAIN}`)"
+      - "traefik.http.routers.pterodactyl_panel.middlewares=panel_https"
+      - "traefik.http.middlewares.panel_https.redirectscheme.scheme=https"
+      # HTTPS
+      - "traefik.http.routers.pterodactyl_panel-https.entrypoints=websecure"
+      - "traefik.http.routers.pterodactyl_panel-https.rule=Host(`${PANEL_DOMAIN}`)"
+      - "traefik.http.routers.pterodactyl_panel-https.tls=true"
+      - "traefik.http.routers.pterodactyl_panel-https.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pterodactyl_panel-https.loadbalancer.server.port=80"
 
 networks:
+  local:
+    external: false
+  pterodactyl:
+    external: true
   default:
     ipam:
       config:

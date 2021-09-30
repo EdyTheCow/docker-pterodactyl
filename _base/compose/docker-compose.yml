@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+
+  traefik:
+    image: traefik:v2.5.3
+    env_file:
+      - .env
+    networks:
+      - pterodactyl
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - ${DATA_DIR}/traefik/acme.json:/acme.json
+
+networks:
+  pterodactyl:
+    external: true

@@ -2,29 +2,14 @@ version: '3.8'
 
 services:
 
-  traefik:
-    image: traefik:v2.3
-    env_file:
-      - .env
-    restart: always
-    networks:
-      - local
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "${DATA_DIR}/traefik/traefik.toml:/etc/traefik/traefik.toml"
-      - "${DATA_DIR}/traefik/acme.json:/acme.json"
-
   wings:
-    image: ghcr.io/pterodactyl/wings:v1.4.4
+    image: ghcr.io/pterodactyl/wings:v1.5.1
     env_file:
       - .env
     restart: always
     networks:
+      - pterodactyl
       - wings0
-      - local
     ports:
       - "2022:2022"
     tty: true
@@ -36,25 +21,32 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "/var/lib/docker/containers/:/var/lib/docker/containers/"
-      - "${DATA_DIR}/wings/etc/:/etc/pterodactyl/"
-      - "/var/lib/pterodactyl/:/var/lib/pterodactyl/"
-      - "/var/log/pterodactyl/:/var/log/pterodactyl/"
       - "/tmp/pterodactyl/:/tmp/pterodactyl/"
       - "/etc/ssl/certs:/etc/ssl/certs:ro"
+      - "${DATA_DIR}/wings/etc/:/etc/pterodactyl/"
+      - "${DATA_DIR}/wings/logs:/var/log/pterodactyl/"
+      - "${SERVERS_DATA_FULL_PATH}:${SERVERS_DATA_FULL_PATH}"
     labels:
-      - "traefik.http.routers.pterodactyl-wings.rule=Host(`${TRAEFIK_WINGS_DOMAIN}`)"
-      - "traefik.http.routers.pterodactyl-wings.tls=true"
-      - "traefik.http.services.pterodactyl-wings.loadbalancer.server.port=80"
-      - "traefik.http.routers.pterodactyl-wings.tls.certresolver=letsencrypt"
+      # HTTP
+      - "traefik.http.routers.pterodactyl_wings.entrypoints=web"
+      - "traefik.http.routers.pterodactyl_wings.rule=Host(`${WINGS_DOMAIN}`)"
+      - "traefik.http.routers.pterodactyl_wings.middlewares=wings_https"
+      - "traefik.http.middlewares.wings_https.redirectscheme.scheme=https"
+      # HTTPS
+      - "traefik.http.routers.pterodactyl_wings-https.entrypoints=websecure"
+      - "traefik.http.routers.pterodactyl_wings-https.rule=Host(`${WINGS_DOMAIN}`)"
+      - "traefik.http.routers.pterodactyl_wings-https.tls=true"
+      - "traefik.http.routers.pterodactyl_wings-https.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pterodactyl_wings-https.loadbalancer.server.port=443"
 
 networks:
-  local:
-    external: false
+  pterodactyl:
+    external: true
   wings0:
     name: wings0
     driver: bridge
     ipam:
       config:
-        - subnet: "172.22.0.0/16"
+        - subnet: "172.21.0.0/16"
     driver_opts:
       com.docker.network.bridge.name: wings0
