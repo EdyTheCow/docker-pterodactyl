@@ -65,12 +65,11 @@ Generates a new encryption key for the APP.
 ```
 docker-compose run --rm panel php artisan key:generate
 ```
-Criar o arquivo de configuração do pterodactyl
+Create the pterodactyl configuration file
 ```
 docker-compose run --rm panel cat > /etc/nginx/conf.d/pterodactyl.conf
 ```
-Colar no console as configurações :
-alterar o \<domain>
+Paste the settings in the console: change the ```<domain>```
 ```xml
 server_tokens off;
 
