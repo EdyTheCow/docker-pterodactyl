@@ -3,7 +3,7 @@ version: '3.8'
 services:
 
   traefik:
-    image: traefik:v2.5.3
+    image: traefik:v3.0
     env_file:
       - .env
     networks:
