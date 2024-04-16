@@ -9,6 +9,8 @@ x-common:
   panel:
     &panel-environment
     APP_URL: "https://panel.example.com"
+    HASHIDS_SALT: "CHANGE_ME" # 20 character length string, you can use this command: openssl rand -base64 20
+    HASHIDS_LENGTH: 8
     # A list of valid timezones can be found here: http://php.net/manual/en/timezones.php
     APP_TIMEZONE: "UTC"
     APP_SERVICE_AUTHOR: "admin@example.com"
