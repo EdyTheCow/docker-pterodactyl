@@ -3,7 +3,7 @@ version: '3.8'
 services:
 
   wings:
-    image: ghcr.io/pterodactyl/wings:v1.6.4
+    image: ghcr.io/pterodactyl/wings:v1.11.13
     env_file:
       - .env
     restart: always
