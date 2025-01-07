@@ -10,6 +10,7 @@
     address = ":443"
 
 [providers.docker]
+  network="pterodactyl"
 
 [certificatesResolvers.letsencrypt.acme]
   email = "admin@example.com"
