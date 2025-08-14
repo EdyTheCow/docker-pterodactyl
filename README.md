@@ -21,6 +21,11 @@ Create second `A record` pointing to wings server IP. If you're using Cloudflare
 
 # 🏗️ Installation
 
+### Create pterodactyl docker network
+```bash
+docker network create pterodactyl
+```
+
 ### Preparations / Setting up Traefik
 <b>Clone repository</b><br />
 ```
